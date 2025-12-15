@@ -3,12 +3,12 @@
 set -euo pipefail
 
 # ====== CONFIG: put your desired packages here ======
-PACKAGES=(
+PACKAGES_DEFAULT=(
   git
   vim
   ripgrep
   fzf
-  fd
+  fdfind
 )
 
 # Optional: set to 1 to do a "dry run"
@@ -160,4 +160,3 @@ main() {
 
 main "$@"
 
-echo export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'

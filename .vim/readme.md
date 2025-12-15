@@ -1,0 +1,220 @@
+#+TITLE: Vim Configuration
+#+AUTHOR: Tony
+#+DATE: 2025
+
+* Keybindings
+
+** General
+| Mode   | Key             | Action                              |
+|--------+-----------------+-------------------------------------|
+| -      | =<Space>=       | Leader key                          |
+| Normal | =<leader>cd=    | Open netrw file explorer            |
+| Normal | =<leader>rl=    | Reload vimrc                        |
+| Normal | =<leader><leader>= | Source current file              |
+| Insert | =<C-c>=         | Behave like =<Esc>=                 |
+| Normal | =Q=             | Disabled (no Ex mode)               |
+
+** Editing
+| Mode          | Key          | Action                                 |
+|---------------+--------------+----------------------------------------|
+| Visual        | =J=          | Move selected lines down               |
+| Visual        | =K=          | Move selected lines up                 |
+| Normal        | =J=          | Join lines with cursor preserved       |
+| Visual        | =<leader>p=  | Paste without overwriting clipboard    |
+| Normal/Visual | =<leader>d=  | Delete without overwriting clipboard   |
+| Normal        | =<leader>s=  | Substitute word under cursor on line   |
+| Normal        | =<leader>x=  | Make current file executable           |
+| Normal        | =<leader>dg= | Generate documentation (Doge)          |
+
+** Navigation
+| Mode   | Key          | Action                           |
+|--------+--------------+----------------------------------|
+| Normal | =<C-d>=      | Scroll half-page down and center |
+| Normal | =<C-u>=      | Scroll half-page up and center   |
+| Normal | =n=          | Next search result (centered)    |
+| Normal | =N=          | Previous search result (centered)|
+| Normal | =<C-j>=      | Next location list item          |
+| Normal | =<C-k>=      | Previous location list item      |
+| Normal | =<leader>k=  | Next location list (centered)    |
+| Normal | =<leader>j=  | Previous location list (centered)|
+| Normal | =<leader>cl= | Close location list              |
+
+** FZF
+| Mode   | Key          | Action                              |
+|--------+--------------+-------------------------------------|
+| Normal | =<leader>ff= | Find files                          |
+| Normal | =<leader>fo= | File history                        |
+| Normal | =<leader>fb= | Open buffers                        |
+| Normal | =<leader>fq= | Quickfix list                       |
+| Normal | =<leader>fh= | Help tags                           |
+| Normal | =<leader>fs= | Grep current word under cursor      |
+| Normal | =<leader>fg= | Grep (prompt for input)             |
+| Normal | =<leader>fc= | Grep for current filename           |
+| Normal | =<leader>fi= | Find files in =~/.vim= config       |
+
+** Clipboard (OSCYank)
+| Mode          | Key         | Action                    |
+|---------------+-------------+---------------------------|
+| Normal/Visual | =<leader>y= | Yank via OSCYank          |
+
+* Dependencies
+
+** Required
+- =git= - For plugin management
+- =vim= - 8.0+ recommended
+- =ripgrep= (=rg=) - Fast grep alternative for FZF
+- =fd= - Fast find alternative for FZF
+- =fzf= - Fuzzy finder
+
+** Optional
+- =rust-analyzer= - Rust LSP server
+- =typescript-language-server= - TypeScript/JavaScript LSP
+- =intelephense= - PHP LSP
+
+** Installation
+
+*** Arch Linux
+#+begin_src bash
+sudo pacman -S git vim ripgrep fd fzf
+sudo pacman -S rust-analyzer  # optional
+npm install -g typescript-language-server  # optional
+#+end_src
+
+*** NixOS
+#+begin_src bash
+nix-env -iA nixpkgs.git nixpkgs.vim nixpkgs.ripgrep nixpkgs.fd nixpkgs.fzf
+nix-env -iA nixpkgs.rust-analyzer  # optional
+npm install -g typescript-language-server  # optional
+#+end_src
+
+*** Gentoo
+#+begin_src bash
+sudo emerge --ask dev-vcs/git app-editors/vim sys-apps/ripgrep sys-apps/fd app-shells/fzf
+sudo emerge --ask dev-lang/rust-bin  # for rust-analyzer
+npm install -g typescript-language-server  # optional
+#+end_src
+
+*** Linux (Debian/Ubuntu)
+#+begin_src bash
+sudo apt install git vim ripgrep fd-find fzf
+# Note: fd is called fd-find on Debian/Ubuntu
+#+end_src
+
+*** macOS
+#+begin_src bash
+brew install git vim ripgrep fd fzf
+brew install rust-analyzer  # optional
+npm install -g typescript-language-server  # optional
+#+end_src
+
+*** Rust Analyzer
+#+begin_src bash
+rustup component add rust-analyzer
+#+end_src
+
+* Setup
+
+** 1. Clone or copy your Vim configuration
+#+begin_src bash
+git clone <your-repo> ~/.vim
+#+end_src
+
+** 2. Configure Bash/Zsh
+Add to =~/.bashrc= or =~/.zshrc=:
+
+#+begin_src bash
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
+#+end_src
+
+Then source your shell config:
+#+begin_src bash
+source ~/.bashrc  # or ~/.zshrc
+#+end_src
+
+** 3. Configure fd ignore file
+Create =~/.fdignore=:
+
+#+begin_src bash
+vim ~/.fdignore
+#+end_src
+
+Add these lines:
+#+begin_src
+undodir/
+plugged/
+.git
+#+end_src
+
+** 4. Configure ripgrep ignore file
+Create =~/.rgignore=:
+
+#+begin_src bash
+vim ~/.rgignore
+#+end_src
+
+Add the same patterns:
+#+begin_src
+undodir/
+plugged/
+.git
+#+end_src
+
+** 5. Install plugins
+Open Vim and the plugins will auto-install on first run.
+
+* Plugin List
+
+| Plugin                  | Purpose                           |
+|-------------------------+-----------------------------------|
+| =junegunn/fzf=          | Fuzzy finder                      |
+| =junegunn/fzf.vim=      | FZF Vim integration               |
+| =tomasiser/vim-code-dark= | Code Dark color scheme          |
+| =ghifarit53/tokyonight-vim= | Tokyo Night color scheme      |
+| =yegappan/lsp=          | LSP client                        |
+| =ojroques/vim-oscyank=  | Copy to system clipboard via OSC52|
+| =tpope/vim-commentary=  | Comment/uncomment code            |
+| =itchyny/lightline.vim= | Statusline                        |
+
+* File Structure
+
+#+begin_example
+~/.vim/
+├── vimrc           # Main config (sources all below)
+├── options.vim     # Vim options and settings
+├── keybinds.vim    # Keybindings
+├── plugins.vim     # Plugin manager and plugin list
+├── colors.vim      # Color scheme configuration
+├── fzf.vim         # FZF configuration
+├── lightline.vim   # Lightline configuration
+└── plugged/        # Plugin installation directory
+#+end_example
+
+* Usage
+
+** Installing Plugins
+Plugins auto-install when you first start Vim. To manually reinstall, delete =~/.vim/plugged= and restart Vim.
+
+** Updating Plugins
+#+begin_src bash
+cd ~/.vim/plugged/<plugin-name>
+git pull
+#+end_src
+
+** FZF File Search
+The FZF configuration respects =.gitignore=, =.fdignore=, and =.rgignore= files automatically.
+
+Use =<leader>ff= to search files, =<leader>fg= to grep content.
+
+** LSP Servers
+Configure LSP servers in your config. Currently configured:
+- Rust: =rust-analyzer=
+- TypeScript/JavaScript: =typescript-language-server=
+- PHP: =intelephense=
+
+* Notes
+
+- The plugin manager is custom and minimal - it auto-installs plugins on Vim startup
+- =.fdignore= and =.rgignore= prevent searching through plugin directories and undo files
+- FZF uses =fd= for file listing (faster than =find=) and =rg= for content search
+- OSCYank allows copying to system clipboard even over SSH
+

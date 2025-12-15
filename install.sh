@@ -54,29 +54,4 @@ else
   warn ".vimrc not found, skipping"
 fi
 
-# --- Configure FZF default command ---
-log "Configuring FZF_DEFAULT_COMMAND"
-
-if command -v fd >/dev/null 2>&1; then
-  FZF_CMD="fd --type f --hidden --follow"
-  ok "Detected fd"
-elif command -v fdfind >/dev/null 2>&1; then
-  FZF_CMD="fdfind --type f --hidden --follow"
-  ok "Detected fdfind"
-else
-  warn "Neither fd nor fdfind found; skipping FZF configuration"
-  exit 0
-fi
-
-LINE="export FZF_DEFAULT_COMMAND='$FZF_CMD'"
-
-if grep -qxF "$LINE" ~/.bashrc; then
-  warn "FZF_DEFAULT_COMMAND already present in ~/.bashrc"
-else
-  log "Appending FZF_DEFAULT_COMMAND to ~/.bashrc"
-  echo "$LINE" >> ~/.bashrc
-  ok "FZF_DEFAULT_COMMAND added to ~/.bashrc"
-fi
-
 ok "Setup complete"
-

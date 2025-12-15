@@ -8,7 +8,7 @@ PACKAGES_DEFAULT=(
   vim
   ripgrep
   fzf
-  fdfind
+  fd-find
 )
 
 # Optional: set to 1 to do a "dry run"

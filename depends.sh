@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERBOSE=1
-
-# --- colors ---
+# ---------------- colors ----------------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log()  { [[ "$VERBOSE" -eq 1 ]] && printf "${BLUE}[*]${NC} %s\n" "$*"; }
+log()  { printf "${BLUE}[*]${NC} %s\n" "$*"; }
 ok()   { printf "${GREEN}[+]${NC} %s\n" "$*"; }
 warn() { printf "${YELLOW}[!]${NC} %s\n" "$*"; }
 err()  { printf "${RED}[x]${NC} %s\n" "$*" >&2; }
@@ -23,111 +21,89 @@ as_root() {
   elif need_cmd sudo; then
     sudo "$@"
   else
-    err "Need root privileges but sudo isn't available."
+    err "Root privileges required but sudo not available."
     exit 1
   fi
 }
 
 detect_pm() {
-  if need_cmd apt-get; then echo "apt"
-  elif need_cmd dnf; then echo "dnf"
-  elif need_cmd yum; then echo "yum"
-  elif need_cmd pacman; then echo "pacman"
-  elif need_cmd zypper; then echo "zypper"
-  elif need_cmd apk; then echo "apk"
-  elif need_cmd brew; then echo "brew"
-  else echo "unknown"
+  if need_cmd apt-get; then echo apt
+  elif need_cmd dnf; then echo dnf
+  elif need_cmd yum; then echo yum
+  elif need_cmd pacman; then echo pacman
+  elif need_cmd zypper; then echo zypper
+  elif need_cmd apk; then echo apk
+  elif need_cmd brew; then echo brew
+  else echo unknown
   fi
 }
 
-install_fd() {
+install_packages() {
   local pm="$1"
 
-  # If fd already exists, we're done.
-  if need_cmd fd; then
-    ok "fd already installed: $(command -v fd)"
-    return 0
-  fi
-
-  log "Installing fd (package manager: $pm)"
+  log "Installing base packages: git vim ripgrep fzf fd"
 
   case "$pm" in
     apt)
-      # Debian/Ubuntu package name is fd-find, command is usually fdfind.
       as_root apt-get update -y
-      as_root apt-get install -y fd-find
-      ok "Installed fd-find (apt)"
+      as_root apt-get install -y \
+        git \
+        vim \
+        ripgrep \
+        fzf \
+        fd-find
+      ok "Installed packages via apt"
 
-        # If Debian-style command exists but fd doesn't, make fd available.
-  if ! need_cmd fd && need_cmd fdfind; then
-    if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
-      # Running as root: create a system-wide alias so everyone gets 'fd'
-      log "Running as root: creating system-wide symlink /usr/local/bin/fd -> $(command -v fdfind)"
-      ln -sf "$(command -v fdfind)" /usr/local/bin/fd
-      ok "Symlinked /usr/local/bin/fd -> $(command -v fdfind)"
-    else
-      # Non-root: user-local symlink
-      log "Creating user-local symlink so 'fd' works (fdfind -> fd)"
-      mkdir -p "$HOME/.local/bin"
-      ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
-      ok "Symlinked $HOME/.local/bin/fd -> $(command -v fdfind)"
-
-      # Make it work immediately in this script run
-      export PATH="$HOME/.local/bin:$PATH"
-    fi
-  fi
+      # Fix Debian stupidity: fdfind → fd
+      if ! need_cmd fd && need_cmd fdfind; then
+        if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+          ln -sf "$(command -v fdfind)" /usr/local/bin/fd
+          ok "Created /usr/local/bin/fd -> fdfind"
+        else
+          mkdir -p "$HOME/.local/bin"
+          ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
+          export PATH="$HOME/.local/bin:$PATH"
+          ok "Created ~/.local/bin/fd -> fdfind"
+        fi
+      fi
       ;;
-    dnf)
-      as_root dnf install -y fd-find fd || as_root dnf install -y fd
-      ok "Installed fd (dnf)"
-      ;;
-    yum)
-      as_root yum install -y fd-find fd || as_root yum install -y fd
-      ok "Installed fd (yum)"
+    dnf|yum)
+      as_root "$pm" install -y git vim ripgrep fzf fd
+      ok "Installed packages via $pm"
       ;;
     pacman)
-      as_root pacman -Syu --noconfirm
-      as_root pacman -S --noconfirm fd
-      ok "Installed fd (pacman)"
+      as_root pacman -Syu --noconfirm git vim ripgrep fzf fd
+      ok "Installed packages via pacman"
       ;;
     zypper)
       as_root zypper refresh
-      as_root zypper install -y fd
-      ok "Installed fd (zypper)"
+      as_root zypper install -y git vim ripgrep fzf fd
+      ok "Installed packages via zypper"
       ;;
     apk)
       as_root apk update
-      as_root apk add fd
-      ok "Installed fd (apk)"
+      as_root apk add git vim ripgrep fzf fd
+      ok "Installed packages via apk"
       ;;
     brew)
       brew update
-      brew install fd
-      ok "Installed fd (brew)"
+      brew install git vim ripgrep fzf fd
+      ok "Installed packages via brew"
       ;;
     *)
-      err "Unsupported/unknown package manager. Install 'fd' manually."
+      err "Unsupported package manager."
       exit 1
       ;;
   esac
-
-  # Final sanity check
-  if need_cmd fd; then
-    ok "fd is available: $(command -v fd)"
-  else
-    err "fd still not found after install. Something is off."
-    exit 1
-  fi
 }
 
-set_fzf_default_command() {
-  local cmd="fd --type f --hidden --follow"
+configure_fzf() {
+  local line="export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'"
 
-  log "Configuring FZF_DEFAULT_COMMAND in ~/.bashrc"
-  local line="export FZF_DEFAULT_COMMAND='$cmd'"
+  log "Configuring FZF_DEFAULT_COMMAND"
 
   if grep -qxF "$line" "$HOME/.bashrc" 2>/dev/null; then
-    warn "FZF_DEFAULT_COMMAND already present in ~/.bashrc"
+    warn "FZF_DEFAULT_COMMAND already present"
   else
     echo "$line" >> "$HOME/.bashrc"
     ok "Added FZF_DEFAULT_COMMAND to ~/.bashrc"
@@ -135,20 +111,22 @@ set_fzf_default_command() {
 }
 
 main() {
-  log "Starting setup"
+  log "Starting dependency install"
 
-  local pm
   pm="$(detect_pm)"
-  if [[ "$pm" == "unknown" ]]; then
-    err "Could not detect package manager."
-    exit 1
-  fi
+  [[ "$pm" == "unknown" ]] && { err "Could not detect package manager"; exit 1; }
   ok "Detected package manager: $pm"
 
-  install_fd "$pm"
-  set_fzf_default_command
+  install_packages "$pm"
 
-  ok "Done"
+  for cmd in git vim rg fzf fd; do
+    need_cmd "$cmd" || { err "$cmd not found after install"; exit 1; }
+    ok "$cmd available: $(command -v "$cmd")"
+  done
+
+  configure_fzf
+
+  ok "All dependencies installed successfully"
 }
 
 main "$@"
